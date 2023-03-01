@@ -147,8 +147,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 		if (FindProcessID(L"notepad.exe") == -1 && FindProcessID(L"Notepad.exe") == -1) // 메모장이 꺼졌으면
 		{
-			MessageBox(NULL, L"아 젠장", L"sans.exe", MB_OK);
-			MessageBox(NULL, L"하지만 만나서 반가웠어.....", L"sans.exe", MB_OK);
+			MessageBox(NULL, L"아 젠장", L"Sans.exe", MB_OK);
+			MessageBox(NULL, L"하지만 만나서 반가웠어.....", L"Sans.exe", MB_OK);
 			MessageBox(NULL, L"You win!", L"정보", MB_OK);
 			MessageBox(NULL, L"https://www.youtube.com/channel/UCSOgYTzjF0lByRtgcYyVPLw", L"Made by 플래그모", NULL);
 			UninstallHook();
