@@ -13,10 +13,8 @@
 
 #include <vector>
 
-#include "SCRIPT.h"
-
 #include "framework.h"
-#include "매크로.h"
+#include "Sans.h"
 
 #pragma comment(lib, "winmm.lib")
 
@@ -32,31 +30,23 @@ int sansID[IDlen];
 
 void ResetNotepad();
 DWORD FindProcessID(LPCTSTR szProcessName); // 프로세스ID를 구하는 함수
-unsigned int WINAPI FindNotepad(void* dummy); // 메모장 배경화면을 바꾸는 함수
 void write(const wchar_t* string, int delay); // 대본을 쓰는 함수
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR    lpCmdLine,
+	_In_ int       nCmdShow)
 {
-	
-
-
 	wchar_t sans[] = L"sans0.wav";
 	mciOpen.lpstrElementName = sans;
 	mciOpen.lpstrDeviceType = L"waveaudio";
 
 	for (int i = 0; i < IDlen; i++)
 	{
-		((char*)sans)[8] = i + 48;
-		mciSendCommand(NULL, MCI_OPEN, MCI_OPEN_ELEMENT | MCI_OPEN_TYPE , (ULONGLONG)(LPVOID)&mciOpen);
+		((char*)sans)[8] = i + 0x30;
+		mciSendCommand(NULL, MCI_OPEN, MCI_OPEN_ELEMENT | MCI_OPEN_TYPE, (ULONGLONG)(LPVOID)&mciOpen);
 		sansID[i] = mciOpen.wDeviceID;
 	}
-
-	int dwThreadID;
-	HANDLE hThread;
-	//hThread = (HANDLE)_beginthreadex(NULL, 0, FindNotepad, NULL, 0, (unsigned*)&dwThreadID);
 
 	system("start notepad");
 	Sleep(500);
@@ -121,19 +111,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	while (TRUE)
 	{
-		if (GetForegroundWindow() == h_notepad) // 메모장이 선택되었으면
+		if (GetForegroundWindow() == h_notepad) // 샌즈가 선택되었으면
 		{
 			HWND tmp_notepad = h_notepad, tmp_edit = h_edit;
-			system("start notepad");
+
+			STARTUPINFOA si = { sizeof(si) };
+			PROCESS_INFORMATION pi;
+			char notepad_name[] = "Notepad";
+			CreateProcessA(NULL, notepad_name, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+
 			Sleep(60);
-			h_notepad = GetForegroundWindow();
-			h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
+			h_notepad = NULL;
+			DWORD dwProcessId;
+
+			// Notepad 클래스의 윈도우를 탐색하며 생성한 메모장의 프로세스 ID와 같은 것을 찾아냄
+			do
+			{
+				h_notepad = FindWindowEx(NULL, h_notepad, L"Notepad", NULL);
+
+				GetWindowThreadProcessId(h_notepad, &dwProcessId);
+				if (pi.dwProcessId == dwProcessId)
+					break;
+			} while (h_notepad != NULL);
+
+			do
+			{
+				h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
+				if (!h_edit)
+					h_edit = FindWindowEx(h_notepad, NULL, L"RichEditD2DPT", NULL);
+			} while (!h_edit);
 
 			write(L"날 만지지마", 150);
 			h_notepad = tmp_notepad;
 			h_edit = tmp_edit;
 		}
-		if (FindProcessID(L"notepad.exe") == -1) // 메모장이 꺼졌으면
+		if (FindProcessID(L"notepad.exe") == -1 && FindProcessID(L"Notepad.exe") == -1) // 메모장이 꺼졌으면
 		{
 			MessageBox(NULL, L"아 젠장", L"sans.exe", MB_OK);
 			MessageBox(NULL, L"하지만 만나서 반가웠어.....", L"sans.exe", MB_OK);
@@ -148,18 +160,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		Sleep(10000);
 }
 
-unsigned int WINAPI FindNotepad(void* dummy)
-{
-	while (TRUE)
-	{
-		Sleep(10000);
-	}
-	return 0;
-}
-
 void write(const wchar_t* string, int delay)
 {
-	int len = wcslen(string);
+	size_t len = wcslen(string);
 	for (int j = 0; j < len; j++)
 	{
 		wchar_t letter = string[j];
@@ -174,7 +177,13 @@ void write(const wchar_t* string, int delay)
 		}
 
 		cout << "WM_IME_CHAR 메시지 보냄" << endl;
-		PostMessageW(h_edit, WM_IME_CHAR, letter, GCS_RESULTSTR);
+
+		/* RichEdit의 경우 줄바꿈은 wm_keydown으로만 가능 */
+		if (letter == L'\n')
+			PostMessageA(h_edit, WM_KEYDOWN, VK_RETURN, 0);
+		else
+			PostMessageW(h_edit, WM_IME_CHAR, letter, GCS_RESULTSTR);
+
 		Sleep(delay); // delay세컨드만큼 대기
 	}
 }
@@ -188,11 +197,17 @@ void ResetNotepad()
 		h_notepad = FindWindow(L"Notepad", NULL); // 메모장 윈도우의 핸들(접근권한)요청
 	}
 
-	h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL); // 메모장 안에서 키보드 입력을 받는 윈도우 핸들을 구함
+	// 메모장 안에서 키보드 입력을 받는 윈도우 핸들을 구함
+	h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
+	if (!h_edit)
+		h_edit = FindWindowEx(h_notepad, NULL, L"RichEditD2DPT", NULL);
+
 	while (!h_edit)
 	{
+		MessageBox(NULL, L"메모장 발견 실패", L"오류", MB_OK | MB_ICONERROR);
 		h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
-		MessageBox(NULL, L"ddd", L"ddd", MB_OK);
+		if (!h_edit)
+			h_edit = FindWindowEx(h_notepad, NULL, L"RichEditD2DPT", NULL);
 	}
 }
 DWORD FindProcessID(LPCTSTR szProcessName)

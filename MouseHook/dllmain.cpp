@@ -34,7 +34,7 @@ LRESULT CALLBACK MouseHook(int code, WPARAM w, LPARAM l) {
 	{
 		if (w == WM_NCLBUTTONDOWN || w == WM_LBUTTONDOWN || w == WM_NCMOUSEMOVE || w == WM_MOUSEMOVE)
 		{
-			MessageBox(NULL, L"만지지마 이 하찮은 인간아", L"sans.exe", MB_OK);
+			MessageBox(NULL, L"만지지마 이 하찮은 인간아", L"Sans.exe", MB_OK);
 			return NULL;
 		}
 	}
