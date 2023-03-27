@@ -139,6 +139,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
 				if (!h_edit)
 					h_edit = FindWindowEx(h_notepad, NULL, L"RichEditD2DPT", NULL);
+				if (!h_edit)
+				{
+					// 윈도우 11에서 1번 업데이트 된 버전의 경우
+					h_edit = FindWindowEx(h_notepad, NULL, L"NotepadTextBox", NULL);
+					h_edit = FindWindowEx(h_edit, NULL, L"RichEditD2DPT", NULL);
+				}
 			} while (!h_edit);
 
 			write(L"날 만지지마", 150);
@@ -201,6 +207,12 @@ void ResetNotepad()
 	h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
 	if (!h_edit)
 		h_edit = FindWindowEx(h_notepad, NULL, L"RichEditD2DPT", NULL);
+	if (!h_edit)
+	{
+		// 윈도우 11에서 1번 업데이트 된 버전의 경우
+		h_edit = FindWindowEx(h_notepad, NULL, L"NotepadTextBox", NULL);
+		h_edit = FindWindowEx(h_edit, NULL, L"RichEditD2DPT", NULL);
+	}
 
 	while (!h_edit)
 	{
@@ -208,6 +220,12 @@ void ResetNotepad()
 		h_edit = FindWindowEx(h_notepad, NULL, L"Edit", NULL);
 		if (!h_edit)
 			h_edit = FindWindowEx(h_notepad, NULL, L"RichEditD2DPT", NULL);
+		if (!h_edit)
+		{
+			// 윈도우 11에서 1번 업데이트 된 버전의 경우
+			h_edit = FindWindowEx(h_notepad, NULL, L"NotepadTextBox", NULL);
+			h_edit = FindWindowEx(h_edit, NULL, L"RichEditD2DPT", NULL);
+		}
 	}
 }
 DWORD FindProcessID(LPCTSTR szProcessName)
